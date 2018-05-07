@@ -3,6 +3,35 @@
 #include <crc/crc32.h>
 #include "config.h"
 
+#define UID_BASE              0x1FFFF7E8U    /*!< Unique device ID register base address */
+
+typedef union {
+	struct _uid {
+		uint32_t	word0;
+		uint32_t	word1;
+		uint32_t	word2;
+	} uid;
+	uint8_t uid_array[sizeof(struct _uid)];
+} t_UID;
+
+
+void config_SetUID(bootloader_config_t *config)
+{
+	t_UID UID;
+	char *str = config->uid;
+
+	UID.uid.word0 = (uint32_t)((*((uint32_t *) UID_BASE)));
+	UID.uid.word1 = (uint32_t)((*((uint32_t *)(UID_BASE + 4U))));
+	UID.uid.word2 = (uint32_t)((*((uint32_t *)(UID_BASE + 8U))));
+
+	static const char d2x[] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
+	for (uint8_t i=0; i<sizeof(UID.uid_array); i++) {
+		*str++ = d2x[ UID.uid_array[i] >> 4 ];
+		*str++ = d2x[ UID.uid_array[i] & 0x0F ];
+	}
+	*str = 0;
+}
+
 static uint32_t config_calculate_crc(void *page, size_t page_size)
 {
     return crc32(0, (uint8_t *)page + 4, page_size - 4);
@@ -37,7 +66,7 @@ void config_write(void *buffer, bootloader_config_t *config, size_t buffer_size)
 
 void config_write_messagepack(cmp_ctx_t *context, bootloader_config_t *config)
 {
-    cmp_write_map(context, 6);
+    cmp_write_map(context, 7);
 
     cmp_write_str(context, "ID", 2);
     cmp_write_u8(context, config->ID);
@@ -56,6 +85,9 @@ void config_write_messagepack(cmp_ctx_t *context, bootloader_config_t *config)
 
     cmp_write_str(context, "update_count", 12);
     cmp_write_uint(context, config->update_count);
+
+    cmp_write_str(context, "UID", 3);
+    cmp_write_str(context, config->uid, strlen(config->uid));
 }
 
 bootloader_config_t config_read(void *buffer, size_t buffer_size)
@@ -67,6 +99,8 @@ bootloader_config_t config_read(void *buffer, size_t buffer_size)
 
     cmp_mem_access_ro_init(&context, &cma, (uint8_t *)buffer + 4, buffer_size - 4);
     config_update_from_serialized(&result, &context);
+
+	config_SetUID(&result);
 
     return result;
 }

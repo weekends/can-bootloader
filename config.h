@@ -16,7 +16,10 @@ typedef struct {
     uint32_t application_crc;
     uint32_t application_size;
     uint32_t update_count;
+    char uid[24+1];				/**< Pointer to CPU UID */
 } bootloader_config_t;
+
+void config_SetUID(bootloader_config_t *config);
 
 /** Returns true if the given config page is valid. */
 bool config_is_valid(void *page, size_t page_size);

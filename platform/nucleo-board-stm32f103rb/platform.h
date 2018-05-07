@@ -11,9 +11,9 @@ extern "C" {
 #define PLATFORM_DEVICE_CLASS "nucleo-board-stm32f103rb"
 #define FLASH_PAGE_SIZE 0x0400 // 1K
 #define CONFIG_PAGE_SIZE FLASH_PAGE_SIZE
-#define PIN_LED2 GPIO5  
-#define PORT_LED2 GPIOA  
-	
+#define PIN_LED2 GPIO5
+#define PORT_LED2 GPIOA
+
 extern uint8_t config_page_buffer[CONFIG_PAGE_SIZE];
 
 // symbols defined in linkerscript

@@ -31,7 +31,7 @@ void can_interface_init(void)
              CAN_BTR_SJW_1TQ, // Resynchronization time quanta jump width
              CAN_BTR_TS1_10TQ,// Time segment 1 time quanta width
              CAN_BTR_TS2_7TQ, // Time segment 2 time quanta width
-             2,               // Prescaler
+             8,               // Prescaler
              false,           // Loopback
              false);          // Silent
 
@@ -52,6 +52,7 @@ void fault_handler(void)
     // while(1); // debug
     reboot_system(BOOT_ARG_START_BOOTLOADER_NO_TIMEOUT);
 }
+
 void rcc_clock_setup_in_hsi_out_36mhz(void)
 {
     /* Enable internal high-speed oscillator. */
@@ -98,6 +99,9 @@ void rcc_clock_setup_in_hsi_out_36mhz(void)
     rcc_apb1_frequency = 18000000;
     rcc_apb2_frequency = 36000000;
 }
+
+
+
 void platform_main(int arg)
 {
     /*
@@ -109,44 +113,46 @@ void platform_main(int arg)
 
     //Activate PORTA
     rcc_periph_clock_enable(RCC_GPIOA);
+
+    rcc_periph_clock_enable(RCC_GPIOB);
     rcc_periph_clock_enable(RCC_AFIO);
 
     // CAN pin
     /* init PA12 (TX) to Alternativ function output */
-	gpio_set_mode(GPIOA,GPIO_MODE_OUTPUT_50_MHZ,GPIO_CNF_OUTPUT_ALTFN_PUSHPULL,GPIO_CAN1_TX);//TX output
+//	gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_CAN1_TX);		//TX output
+	gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO_CAN_PB_TX);	//TX output
+
     /* init PA11 (RX) to input pull up */
-	gpio_set_mode(GPIOA,GPIO_MODE_INPUT,GPIO_CNF_INPUT_PULL_UPDOWN,GPIO_CAN1_RX ); //RX input pull up/down
-	gpio_set(GPIOA,GPIO_CAN1_RX);//pull up
+//	gpio_set_mode(GPIOA, GPIO_MODE_INPUT,GPIO_CNF_INPUT_PULL_UPDOWN, GPIO_CAN1_RX);		//RX input pull up/down
+//	gpio_set(GPIOA, GPIO_CAN1_RX);		//pull up
+	gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO_CAN_PB_RX);	//RX input pull up/down
+	gpio_set(GPIOB, GPIO_CAN_PB_RX);	//pull up
+
     /* Remap the can to pin PA11 and PA12 , sould already be by default */
-	gpio_primary_remap(AFIO_MAPR_SWJ_CFG_FULL_SWJ,AFIO_MAPR_CAN1_REMAP_PORTA);//Can sur port A pin 11/12
+	gpio_primary_remap(AFIO_MAPR_SWJ_CFG_FULL_SWJ, AFIO_MAPR_CAN1_REMAP_PORTB);//Can sur port A pin 11/12
 
     // LED on
     /*init the PA5 port to output in PushPull mode at maxspeed */
-	gpio_set_mode(PORT_LED2,GPIO_MODE_OUTPUT_50_MHZ,GPIO_CNF_OUTPUT_PUSHPULL,PIN_LED2);//led output
+	gpio_set_mode(PORT_LED2, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, PIN_LED2);	//led output
 
 
     //Blinking led on PA5 (build in led in the nucleo-stm32f103rb)
-    /*
     uint32_t i=0,j=0;
-    for(i=0;i<11;i++)
-    {
-        for(j=0;j<1000000;j++)
-        {
+    for(i=0; i<11; i++) {
+        for(j=0; j<1000000; j++) {
             asm("nop");
         }
         gpio_toggle(PORT_LED2,PIN_LED2);
     }
-    for(j=0;j<10000000;j++)
-    {
+    for (j=0;j<10000000;j++) {
         asm("nop");
     }
-    gpio_set(PORT_LED2,PIN_LED2);*/
+    gpio_set(PORT_LED2,PIN_LED2);
 
     // configure timeout of 10000 milliseconds on a 36Mhz
     timeout_timer_init(36000000, 10000);
     can_interface_init();
     bootloader_main(arg);
 
-    
     reboot_system(BOOT_ARG_START_BOOTLOADER);
 }

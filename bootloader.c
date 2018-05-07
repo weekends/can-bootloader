@@ -83,6 +83,7 @@ void bootloader_main(int arg)
         config.application_crc = 0xDEADC0DE;
         config.application_size = 0;
         config.update_count = 1;
+        config_SetUID(&config);
     }
 
     can_datagram_t dt;
